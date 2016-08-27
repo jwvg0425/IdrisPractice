@@ -463,3 +463,153 @@ record { a->b->c } // 함수임
 
 ### Dependent Records
 
+당연히 Dependent Record도 존재할 수 있다. 앞에서 말한 `Class` 레코드를 학생 숫자에 의존적인 타입으로 만들 수 있다.
+
+```Idris
+record SizedClass (size : Nat) where
+  constructor SizedClassInfo
+  students : Vect size Person
+  className : String
+
+-- addStudent 정의가 아래와 같이 바뀌어야 함
+
+addStudent : Person -> SizedClass n -> SizedClass (S n)
+addStudent p c = SizedClassInfo (p :: students c) (className c)
+```
+
+다만 위 예시는 의존적으로 해도 되고 안 해도 되는데, 반드시 의존적으로 만들어야만 하는 예시가 있는지 아니면 그냥 무조건 의존적으로도 의존적이지 않게도 할 수 있는지는 잘 모르겠다. 느낌적으로는 implicit arguments에 대해서만 생략할 수 있는건가? 싶긴한데 안 그럴 거 같기도 하고. 근데 그러면 타입 시스템의 제약이 너무 약해지지 않나(컴파일 타임에 검증하는 범위가 줄어들지 않나) 싶기도 하고 프로그래머가 필요한 만큼 적절히 쓰는 거니 편의성 차원에서 괜찮은 것 같기도 하고(너무 깐깐하면 피곤하니까). 이 부분은 좀 더 고민해봐야 할 것 같다.
+
+## More Expressions
+
+### let bindings
+
+Haskell과 동일.
+
+### List comprehensions
+
+Haskell과 동일.
+
+### case expressions
+
+역시 Haskell이랑 별반 다를 바 없는 듯. List comprehension 포함해서 이제 이런 류 문법들은 타 언어들에도 조금씩 도입되기 시작한 만큼 그렇게 특별할 건 없는 것 같다.
+
+### Totality
+
+가능한 모든 입력 값에 대해 종료되거나, 어떤 출력값을 만들어 내는게 보장이 되는 함수를 total function으로 부른다고 한다. Idris의 `head` 함수가 total function이다.
+
+
+```Idris
+||| Get the first element of a non-empty list
+||| @ ok proof that the list is non-empty
+head : (l : List a) -> {auto ok : NonEmpty l} -> a
+head []      {ok=IsNonEmpty} impossible
+head (x::xs) {ok=p}    = x
+```
+
+Idris에 흥미를 갖게 만든 요소중 하나인 컴파일 타임의 프로그램 증명과 관련된 내용인 것 같다. `{auto ok : NotEmpty l}` 이 부분이 빈 리스트에 대한 `head` 호출을 컴파일 에러가 일어나게 만드는 부분이라고 한다. Haskell 문법 상에서는 이런 식으로 컴파일 에러를 일으키는게 불가능하기 때문에 런타임 에러를 일으킨다. 
+
+자세한 내용은 잘 이해가 안가고..(설명도 부실) 나중에 좀 더 다루는 것 같으니 거기서 다시 제대로 배워보자. 저 `ok` 가 뭔가 증명과 관련된 내용을 하고, total function의 개념에 대해서만 알고 있으면 될 듯. total이 아닌 함수를 partial function이라고 부른다고 한다(일부 입력 값에 대해서만 동작하는 애들)
+
+## Interfaces
+
+Haskell의 type class에 대응. 문법도 사용법도 유사함. 인스턴스 정의하는 문법만 조금 다른듯
+
+```Idris
+interface Show a where
+  show : a -> String
+
+show : Show a => a -> String
+
+Show Nat where
+  show Z = "Z"
+  show (S k) = "s" ++ show k
+```
+
+## Default Definitions
+
+Haskell과 동일~
+
+## Extending Interfaces
+
+Haskell과 동일~
+
+## Functors and Applicatives
+
+Haskell과 개념은 같은데, 인터페이스 정의 방식이 약간 다르다. Haskell로 치면 `Kind`를 직접 명시해주어야 한다고 생각하면 될 듯.
+
+```Idris
+interface Functor (f : Type -> Type) where
+  map : (m : a -> b) -> f a -> f b
+```
+
+여기서 말하는 `f`는 엄밀히 따지면 타입이 아니기 때문에 명시해주어야한다고 한다. 명확하게 보여준다는 점에서 Haskell보다 나은 것 같음.
+
+## Monad & do notation
+
+Haskell이랑 다를 바 없음.
+
+### Pattern Matching Bind
+
+Monad transformer가 갖고 있는 복잡함을 좀 해소해주는 방식이 아닌가 싶다. 
+
+```Idris
+readNumbers : IO (Maybe (Nat, Nat))
+readNumbers =
+  do x <- readNumber
+     case x of
+          Nothing => pure Nothing
+          Just x_ok => do y <- readNumber
+                          case y of
+                               Nothing => pure Nothing
+                               Just y_ok => pure (Just (x_ok, y_ok))
+```
+
+두 개의 숫자를 입력받아 그걸 튜플로 돌려주는 함수를 작성한다고 하면 위와 같이 굉장히 복잡한 코드가 나오게 되는데, Haskell에서는 이걸 모나드 트랜스포머로 처리한다. 모나드 트랜스포머는 개념을 학습하는 비용이 좀 크다는 단점이 있는데, Idris에서는 이걸 Pattern Matching Bind로 좀 쉽게 해결할 수 있는 것 같다(모든 경우에 모나드 트랜스포머를 대체할 수 있는지는 모르겠다. 일부 쉽게 갈 수 있는 경우에도 모나드 트랜스포머를 써서 코드가 복잡해지는 걸 어느정도 방지하는 효과가 있는 것 같음).
+
+```Idris
+readNumbers : IO (Maybe (Nat, Nat))
+readNumbers =
+  do Just x_ok <- readNumber | Nothing => pure Nothing
+     Just y_ok <- readNumber | Nothing => pure Nothing
+     pure (Just (x_ok, y_ok))
+```
+
+파이프(|) 앞이 선호되는 바인드고, 이게 실패하면 파이프 뒤에 있는 값으로 처리함.
+
+### ! notation
+
+개인적으로는 오 이거 진짜 괜찮다! 라는 생각이 든 문법. 모나드 쓰다보면 코드가 쓸 데 없이 길어질 때가 많은데, 그걸 많이 줄여주면서 코드 자체도 직관적이어서 좋다.
+
+```Idris
+m_add : Maybe Int -> Maybe Int -> Maybe Int
+m_add x y = return (!x + !y)
+```
+
+맨 안 쪽 / 왼쪽 -> 오른쪽 순서로 자동으로 바인딩 해줌.
+
+```Idris
+let y = 42 in f !(g !(print y) !x)
+
+--실제로는 이렇게 처리 됨
+
+let y = 42 in do y' <- print y
+                x' <- x
+                g' <- g y' x'
+                f g'
+```
+
+모나드 함수임에도 그냥 함수 호출하듯이 코드 간결하게 짤 수 있다는 점이 굉장히 매력적임.
+
+### Monad comprehensions
+
+이것도 좀 재밌는 개념. list comprehensions를 monad 전체로 확장. 엄밀히 말하면 `Monad` 와 `Alternative`를 만족하는 모두에 대해서 동작. `guard` 함수 때문에 `Alternative`는 당연히 만족해야하는 거지만. 찾아보니 Haskell도 처음에는 모든 모나드에 대해 쓸 수 있었다는데 나중에 List에 대해서만 가능하도록 제약이 붙었다고 한다. 왜일까? 괜히 헷갈리게 돼서 그런 것 같기도 하고. 아무튼 이걸 이용하면 위의 `m_add` 함수를 아래와 같이 정의할 수도 있다.
+
+```Idris
+m_add : Maybe Int -> Maybe Int -> Maybe Int
+m_add x y = [ x' + y' | x' <- x, y' <- y]
+```
+
+이렇게 보니 확실히 좀 헷갈릴 것 같기도 하다. 이 문법 자체가 모나드의 단순한 syntactic sugar다 보니 사실 그렇게 필요한가? 싶기도. 오히려 Haskell이나 Idris말고 타 언어에서 더 유용할 것 같다(이미 Python이 잘 가져다 쓰고 있기도 하고).
+
+## Idiom brackets
+
