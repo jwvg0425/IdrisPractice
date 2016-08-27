@@ -222,10 +222,106 @@ IO는 Haskell이랑 거의 다를 바가 없다. 마찬가지로 타입 시스�
 
 ## Laziness
 
-Haskell이랑 다르게 Idris는 eager evaluation 전략을 취한다. Haskell 하다보면 무조건 Lazy evaluation하는 거때문에 빡칠 때가 좀 있어서 개인적으로는 괜찮은 선택이라고 생각. 대신에 Laziness가 분명 힘을 발휘할 때도 있어서, 이걸 별도의 타입으로 제공해준다.
+Haskell이랑 다르게 Idris는 eager evaluation 전략을 취한다. Haskell 하다보면 무조건 lazy evaluation하는 거때문에 빡칠 때가 좀 있어서 개인적으로는 괜찮은 선택이라고 생각. 대신에 Laziness가 분명 힘을 발휘할 때도 있어서, 이걸 별도의 타입으로 제공해준다.
 
 ```Idris
 ifThenElse : Bool -> a -> a -> a
 ifThenElse True t e = t
 ifThenElse False t e = e
 ```
+
+이런 구조의 함수의 경우 첫번째 `Bool` 값이 `True`인 경우에는 `t`만, `False`인 경우에는 `e`만 쓰게 된다. lazy evaluation할 때는 별 문제가 없는데, eager evaluation할 때는 쓰지 않을 값도 함수를 호출할 때 평가되어 버리기 때문에 성능 상 손해를 볼 수 밖에 없다. 그래서 Idris에서는 별도의 Lazy 타입을 제공해준다.
+
+```Idris
+data Lazy : Type -> Type where
+  Delay : (val : a) -> Lazy a
+
+Force : Lazy a -> a
+```
+
+여타 언어들에서 람다 등을 이용해 값을 담아뒀다가 필요할 때 평가해서 쓰는 방식과 유사. `Lazy` 타입의 값은 `Force`를 쓰기 전까진 평가되지 않는다. 다만 일일히 `Force` 해주고 하는 게 귀찮아지는게 문제인데 Idris의 경우 컴파일러가 알아서 해준다. 그냥 `Lazy` 값을 쓰기만 하면 자동으로 lazy evaluation이 된다는 것. 이 점이 꽤 마음에 든다. 이런 간단한 개념의 경우 타 언어에서도 쉽게 적용이 가능할 것 같고 또 유용할 것 같다는 느낌.
+
+```Idris
+ifThenElse : Bool -> Lazy a -> Lazy a -> a -- 이렇게 타입만 적절히 Lazy 넣어서 바꿔주면 됨
+ifThenElse True  t e = t
+ifThenElse False t e = e
+```
+
+## Codata Types
+
+이것 역시 lazy evaluation의 연장에 있는 개념. 무한대 크기의 구조를 정의할 수 있는 데이터 타입은 `codata` 키워드를 써서 정의한다. 
+
+```Idris
+codata Stream : Type -> Type where
+  (::) : (e : a) -> Stream a -> Stream a
+```
+
+이렇게 정의하면, 컴파일러가 알아서 아래와 같이 바꿔준다.
+
+```Idris
+data Stream : Type -> Type where
+  (::) : (e : a) -> Inf (Stream a) -> Stream a
+```
+
+`Inf T` 타입은 `T` 인자를 lazy evaluation 하도록 바꿔준다. 이걸 통해서 무한대 크기의 데이터 구조를 정의할 수 있게 만드는 것. 그래서 Stream을 이용해서 아래와 같은 함수를 정의할 수 있다.
+
+```Idris
+ones : Stream Nat
+ones = 1 :: ones
+```
+
+`Vect`나 `List` 라면 `ones` 호출 단계에서 평가되어버리기 때문에 무한 루프에 걸린다. `ones` 리턴 값 자체를 `Lazy`로 묶어도, 어쨌든 값을 가져다 쓸 때는 전체를 다 평가해야하기 때문에 쓰는 단계에서 무한 루프가 걸림. 부분적으로도 다 `Lazy`하게 평가가 되어야하기 때문에 `codata`라는 개념이 필요한 것 같다. 사실 `Inf` 타입을 직접 써도 상관없지만, 역시 귀찮기 때문에 `syntax sugar` 같은 개념으로 들어가 있는 듯. 다만 상호 참조하는 타입에 대해서는 `codata`를 쓸 수 없다는 문제가 있다.
+
+```Idris
+mutual
+  codata Blue a = B a (Red a)
+  codata Red a = R a (Blue a)
+
+mutual
+  blue : Blue Nat
+  blue = B 1 red
+
+  red : Red Nat
+  red = R 1 blue
+
+mutual
+  findB : (a -> Bool) -> Blue a -> a
+  findB f (B x r) = if f x then x else findR f r
+
+  findR : (a -> Bool) -> Red a -> a
+  findR f (R x b) = if f x then x else findB f b
+
+main : IO ()
+main = do printLn $ findB (== 1) blue
+```
+
+이 예제는 무한 루프에 걸린다. `codata`는 타입 정의에서 자기 자신이 나올 때만 `Inf`를 붙이는데, `Blue`와 `Red`가 정의 단계에서 서로를 참조할 때 자기 자신이 아닌 타입에는 `Inf`를 붙이지 않기 때문이다. `Blue`는 `Red`를 인자로 받고 `Red`는 `Blue`를 인자로 받으니 둘 다 `Inf`가 하나도 들어가지 않게 되는 거고, 결국 무한 루프에 빠지는 것. 그래서 이 경우 아래와 같이 직접 `Inf`를 붙여줘야 한다.
+
+```Idris
+mutual
+  data Blue : Type -> Type where
+   B : a -> Inf (Red a) -> Blue a
+
+  data Red : Type -> Type where
+   R : a -> Inf (Blue a) -> Red a
+
+mutual
+  blue : Blue Nat
+  blue = B 1 red
+
+  red : Red Nat
+  red = R 1 blue
+
+mutual
+  findB : (a -> Bool) -> Blue a -> a
+  findB f (B x r) = if f x then x else findR f r
+
+  findR : (a -> Bool) -> Red a -> a
+  findR f (R x b) = if f x then x else findB f b
+
+main : IO ()
+main = do printLn $ findB (== 1) blue
+```
+
+개인적으로는 이 예제를 보면서 그냥 `codata`라는 키워드 자체를 제공하지 않는게 낫지 않나? 라는 생각이 들었다. 좀 덜 직관적이고, 프로그래머의 실수를 유발할 수 있다는 느낌때문. 다 지원해주거나 아니면 다 안 지원해주는 게 맞다고 봄. dependent type같은게 프로그래머의 실수를 컴파일 타임에 최대한 많이 잡아내려고 나온 개념이고 Idris 역시 그 개념의 유용성을 실험하기 위한 언어라고 생각하는데, 막상 `codata` 같은 키워드가 그거랑 반대되게 프로그래머의 실수를 방치하는 느낌이라 좀 안맞다 싶다. 편의성을 위해서라기엔 무한대 크기 자료구조 같은 걸 정의할 일이 그렇게 많지도 않고.. 뭐 언어 제작자들 나름의 고민 끝에 나온 개념이니 내가 생각하지 못한 무언가가 있을 수도 있지만 개인적으로는 조금 아쉬움.
+
