@@ -658,9 +658,36 @@ interface Monad m => MonadState s (m : Type -> Type) | m where
 
 이 부분은 다른 언어와 그렇게 큰 차이가 있는 부분도 아니고, 내가 Idris에서 배우고 싶은 내용이랑은 크게 관련 없는 부분이라 생략.
 
-## dependent pattern matching
+## with
+
+```Idris
+filter : (a -> Bool) -> Vect n a -> (p ** Vect p a)
+filter p [] = ( _ ** [] )
+filter p (x :: xs) with (filter p xs)
+  | ( _ ** xs' ) = if (p x) then ( _ ** x :: xs' ) else ( _ ** xs' )
+```
+
+이 예제에서 썼던 것. 여기서는 `filter p xs`의 결과를 분해하는데 쓰였다. 간접적인 연산의 결과를 분해해서 패턴으로 매칭하는 문법인듯.
+
+좀 더 복잡한 예제는 다음과 같다.
+
+```Idris
+data Parity : Nat -> Type where
+   Even : Parity (n + n)
+   Odd  : Parity (S (n + n))
+
+natToBin : Nat -> List Bool
+natToBin Z = Nil
+natToBin k with (parity k)
+   natToBin (j + j)     | Even = False :: natToBin j
+   natToBin (S (j + j)) | Odd  = True  :: natToBin j
+```
+
+자연수를 이진수 표현으로 변형하는 것인데, 좀 이해가 안 된다. `parity k`의 결과가 파이프(|) 오른쪽, 왼쪽에는 그 결과가 영향을 끼치는 패턴이 온다고 한다. 여기선 `parity k` 결과에 따라 `k` 를 `(j+j)` 혹은 `S (j+j)`로 분해하는 듯. 아직 명확히 느낌이 오진 않는데 왜 이런 문법을 쓰는가는 약간 감이 올듯 말듯. Haskell의 [view patterns extension](https://ocharles.org.uk/blog/posts/2014-12-02-view-patterns.html)과 비슷한 느낌인 것 같은데..
 
 ## Theorem Proving
+
+
 
 ## Provisional Definitions
 
