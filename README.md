@@ -343,3 +343,123 @@ Haskell이랑 다를 것 없음.
 
 그냥 쓸 때는 Haskell이랑 별 다를 바가 없긴 한데.. (a,b,c) 이런 애들이 nested pair로 구성된다는 사실은 좀 특이한 듯. Haskell도 내부 구현이 저런가? 잘 모르겠다. `fst` / `snd` 동작이 Haskell이랑 다른 걸 봐서 아닌 것 같은데. Idris에서는 `fst` / `snd`를 모든 튜플에 대해 사용 가능하며, 3개 이상 짜리 튜플에 `snd`를 쓰면 마치 `tail` 함수처럼 첫번째 원소를 제외한 나머지로 구성된 튜플이 나온다(내부적으로 nested pair기 때문). 이건 좀 괜찮은 것 같기도 하다.
 
+### Dependent Pair
+
+이것도 꽤 재밌는 개념. 두번째 원소의 타입이 첫번째 원소의 값에 의존성을 갖는 페어를 말한다. 전통적으로(학계에서?) `sigma types`라는 이름으로 불린다고 함.
+
+```Idris
+data DPair : (a : Type) -> (P : a -> Type) -> Type where
+  MkDPair : {P : a -> Type} -> (x : a) -> P x -> DPair a P
+```
+
+`DPair`를 위한 syntactic sugar로 `(a : A ** P)`가 있다. `A`와 `P`의 페어이며, `a`는 `P` 안쪽에서 나타난다(P에 의해 평가되는 값). 실제 타입의 값은 `(a ** p)`로 나타냄. 
+
+```Idris
+vec : (n : Nat ** Vect n Int)
+vec = (2 ** [3, 4])
+```
+
+`DPair`의 첫번 째 값은 `Vect`의 길이를, 두 번째 값은 실제 `Vect`의 값을 나타내는데 쓰였다. 풀어서 쓰면 아래와 같다.
+
+```Idris
+vec : DPair Nat (\n => Vect n Int)
+vec = MKDPair 2 [3,4]
+```
+
+여기서 `n` 값은 `Vect`의 길이로부터 추론이 가능하기 때문에, 생략이 가능하다. placeholder(`_`)를 쓸 수 있음.
+
+```Idris
+vec : (n : Nat ** Vect n Int)
+vec = (_ ** [3,4])
+```
+
+타입의 `Nat` 역시 `Vect n Int`로부터 추론 가능하므로, 생략 가능. implicit arguments 생각해보면 될 듯.
+
+```Idris
+vec : (n ** Vect n Int)
+vec = (_ ** [3,4])
+```
+
+이 타입을 쓰는 대표적인 사례가 `Vect`에 대한 `filter` 함수.
+
+```Idris
+filter : (a -> Bool) -> Vect n a -> (p ** Vect p a)
+```
+
+`Vect`는 해당 값의 길이가 얼마인지를 알아야하는데, `filter`를 적용한 결과 길이가 얼마나 될 지를 알 수 없기 때문에 정의하기가 까다롭다. 이 때 쓰는 것이 `DPair`. 필터링한 결과 나오는 원소 개수 `p`에 의존적인 `DPair` 값을 리턴하게 만들어서 해결.
+
+```Idris
+filter p Nil = (_ ** []) -- 당연
+filter p (x :: xs) with (filter p xs) -- with은 나중에 설명한다고 함. 하지만 대충 무슨 뜻인지는 알아 먹겠다
+  | (_ ** xs') = if (p x) then (_ ** x :: xs') else (_ ** xs') --길이는 어차피 추론하기 때문에 다 _로 생략
+```
+
+좋은 개념이긴 한데 코드가 좀 복잡해지지 않나, 그리고 학습 비용이 좀 크지 않나 하는 느낌이 든다. Idris 코드들 전반적으로 다 그런 느낌. dependent type 하나 때문에 코드 전체적인 복잡도가 확 올라가는 것 같다. 단순히 타입과 값이 혼재되는 이 방식 자체가 익숙하지 않기 때문인가 싶기도 하고. dependent pair도 nested 하게 쓸 수 있을 것 같은데, (첫번 째 값에 두번째 타입이 의존, 두번째 값에 세번째 타입이 의존, ...) 그런 코드는 진짜 복잡하지 않을까.
+
+### Records
+
+이건 Haskell이랑 쫌 다르다. 구문 자체가 좀 다름
+
+```Idris
+record Person where
+  constructor : MkPerson
+  firstName, middleName, lastName : String
+  age : Int
+
+fred : Person
+fred = MkPerson "Fred" "Joe" "Bloggs" 30
+```
+
+`constructor`를 따로 분리해서 키워드로 씀. 그 밑에 필드 목록을 적는데, 같은 타입의 값들은 한 줄에 묶어서도 쓸 수 있다. 값 가져다 쓰고 하는 부분에서는 Haskell이랑 다를 바 없음. 필드 가져오는 함수 자동으로 생성해주는 것 뿐 일반 `data`랑 큰 차이는 없다는 점도 마찬가지.
+
+`record` 함수(라고 해야할지 구문이라고 해야할지)를 이용해 일부 필드만 갱신된 복사본을 만들 수 있음. 이것도 Haskell이랑 약간 다름. 명시적이라 나은 거 같기도 하고 쓸데없이 타자만 많이 쳐야되는 것 같기도 하고?
+
+```Idris
+record { firstName = "Jim" } fred
+record { firstName = "Jim", age = 20 } fred
+```
+
+좋은 점은 필드 이름 중복이 허용된다는 것. Haskell에서 이 것때문에 얼마나 빡쳤는지를 생각해보면..
+
+당연하게도 dependent type을 필드로 가지는 record 역시 정의할 수 있다.
+
+```Idris
+record Class where
+  constructor ClassInfo
+  students : Vect n Person
+  className : String
+```
+
+`Vect`의 길이 `n`이 타입 `Class`의 정의에 포함되어 있지 않기 때문에 서로 다른 길이의 `Vect`로 업데이트하는 것도 가능.
+
+```Idris
+addStudent : Person -> Class -> Class
+addStudent p c = record { students = p :: students c } c
+```
+
+근데 이렇게 되면 `Class`가 내부 학생들의 숫자에 대한 정보를 잃어버리니 좀 그렇지 않나? 하는 생각이 들었는데... 좀 더 보니 명시해줄 수도 있었다. 엄격함과 편의성에서 어느 정도 타협을 보는 방식인 듯. 이건 해당 파트에서 다시 보자
+
+### Nested record update
+
+이거 꽤 편리하다. Haskell에서 불편했던 점을 착실하게 개선하는 문법이 꽤 많은 것 같다. 레코드 안의 레코드 안의 레코드 안의 필드를 가져온다든가 갱신한다든가 하려면 진짜 짜증나는데, 그걸 아래와 같이 참조할 수 있다.
+
+```Idris
+record { a->b->c = val } x
+```
+
+`x` 내부 필드 `a` 내부 필드 `b` 내부 필드 `c` 를 갱신해주는 것(엄밀히 말하면 갱신된 복사본을 돌려주는 것). 문법도 직관적이라 이해하기도 쉽고.
+
+```Idris
+record { a->b->c } x
+```
+
+이건 그냥 값만 가져오기. 맨 뒤에 적용 값 없애면 그 자체로 함수로 동작
+
+```Idris
+record { a->b->c } // 함수임
+```
+
+단순하지만 괜찮은 문법인 것 같다. 좀 길어서 엄청 편하거나 하진 않을 것 같지만 기존에 Haskell에서 쓰던 것 보다는 편한 듯. 더 편한 방법은 없을까?
+
+### Dependent Records
+
