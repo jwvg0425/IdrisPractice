@@ -613,3 +613,36 @@ m_add x y = [ x' + y' | x' <- x, y' <- y]
 
 ## Idiom brackets
 
+Haskell에서 Applicative Functor 쓸 때 번거롭던 걸 해결해주는 문법. `[| f a1 ... an |]` 은 `pure f <*> a1 <*> ... <*> an`으로 번역된다. 이 것도 역시 사소하지만 편의성을 꽤 많이 증진시켜준다. 
+
+```Idris
+m_add : Maybe Int -> Maybe Int -> Maybe Int
+m_add x y = [| x + y |]
+```
+
+Applicative Functor가 파서나 인터프리터 만들 때 편리한 부분이 많으니 당연히 이 것도 그런거 짤 때 편리하다. 튜토리얼에 있는 [예제](http://docs.idris-lang.org/en/latest/tutorial/interfaces.html#an-error-handling-interpreter) 참조. 
+
+## Named Implementations
+
+이것도 좀 편리한 문법인 것 같다. Haskell에서 `newtype`을 통해서 해야하는 걸 좀 쉽게 해주는 듯.
+
+```Idris
+[myord] Ord Nat where
+   compare Z (S n)     = GT
+   compare (S n) Z     = LT
+   compare Z Z         = EQ
+   compare (S x) (S y) = compare @{myord} x y
+
+testList : List Nat
+testList = [3,4,1]
+
+*named_impl> show (sort testList)
+"[sO, sssO, ssssO]" : String
+*named_impl> show (sort @{myord} testList)
+"[ssssO, sssO, sO]" : String
+```
+
+문법 자체는 딱히 설명 필요 없을 만큼 간단하니 생략.
+
+## Determining Parameters
+
