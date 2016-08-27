@@ -2,7 +2,7 @@
 Idris Practice
 
 
-[공식 튜토리얼 자료](http://docs.idris-lang.org/en/latest/tutorial/index.html)를 읽고 배운 내용들을 아래에 쭉 정리할 예정.
+[공식 튜토리얼 자료](http://docs.idris-lang.org/en/latest/tutorial/index.html)를 읽고 생각한 내용들을 아래에 쭉 정리할 예정. 
 
 이 언어 자체가 실용적이냐? 라고 하면 그건 잘 모르겠는데.. 라는 느낌이지만, 이 언어에 있는 독특한 여러 가지 개념들은 꽤 재밌다.
 
@@ -34,7 +34,7 @@ mult (S k) y = plus y (mult k y)
 
 ## where
 
-Haskell처럼 where 절을 이용해 해당 함수 내에만 쓰이는 것들을 정의할 수 있다. 역시 인덴트 맞춰줘야하는 건 당연.
+Haskell처럼 where 절을 이용해 해당 함수 내에만 쓰이는 것들을 정의할 수 있다. 인덴트 맞춰줘야하는 건 당연.
 
 ```Idris
 reverse : List a -> List a
@@ -102,7 +102,7 @@ data Vect : Nat -> Type -> Type where
   (::) : a -> Vect k a -> Vect (S k) a -- Idris에서는 오버로딩도 된다. List의 cons 연산자랑 똑같이 생겨먹음
 ```
 
-이건 Haskell의 [Type Families 확장](https://ocharles.org.uk/blog/posts/2014-12-12-type-families.html) 문법과 유사한 방식으로 타입을 정의하는 것. `Vect` 타입은 자연수와 타입을 인자로 받는데, 이게 대표적인 의존 타입의 사용 예라고 한다. Vect n a는, 길이가 n인 a 타입의 리스트를 나타내는 것. 그래서 두 `Vect`를 연결하는 함수는 아래와 같이 정의된다.
+이건 Haskell의 [Type Families 확장](https://ocharles.org.uk/blog/posts/2014-12-12-type-families.html) 문법과 유사한 방식으로 타입을 정의하는 것. `Vect` 타입은 자연수와 타입을 인자로 받는데, 이게 대표적인 의존 타입의 사용 예라고 한다. `Vect n a`는, 길이가 `n`인 `a` 타입의 리스트를 나타내는 것. 그래서 두 `Vect`를 연결하는 함수는 아래와 같이 정의된다.
 
 ```Idris
 (++) : Vect n a -> Vect m a -> Vect (n+m) a
@@ -324,4 +324,22 @@ main = do printLn $ findB (== 1) blue
 ```
 
 개인적으로는 이 예제를 보면서 그냥 `codata`라는 키워드 자체를 제공하지 않는게 낫지 않나? 라는 생각이 들었다. 좀 덜 직관적이고, 프로그래머의 실수를 유발할 수 있다는 느낌때문. 다 지원해주거나 아니면 다 안 지원해주는 게 맞다고 봄. dependent type같은게 프로그래머의 실수를 컴파일 타임에 최대한 많이 잡아내려고 나온 개념이고 Idris 역시 그 개념의 유용성을 실험하기 위한 언어라고 생각하는데, 막상 `codata` 같은 키워드가 그거랑 반대되게 프로그래머의 실수를 방치하는 느낌이라 좀 안맞다 싶다. 편의성을 위해서라기엔 무한대 크기 자료구조 같은 걸 정의할 일이 그렇게 많지도 않고.. 뭐 언어 제작자들 나름의 고민 끝에 나온 개념이니 내가 생각하지 못한 무언가가 있을 수도 있지만 개인적으로는 조금 아쉬움.
+
+## Useful Data Types
+
+### List and Vect
+
+리스트 류 타입에 대한 syntactic sugar로 `[], [1,2,3]` 같은 걸 쓸 수 있다는 것. `map` 같은 함수에 대한 설명(오버로딩 되어있다는 것 등)이 있는데 오버로딩 제외하면 Haskell이랑 별 다를 바 없어서 딱히 신경쓸 부분은 없다.
+
+#### Anonymous Function, Section
+
+Haskell이랑 문법이 거의 같다. 람다에서 패턴매칭 가능이라든가 타입 명시 해줄 수도 있다 이런 것도. 다만 인자들을 공백으로 구분하는게 아니라 콤마(`,`)를 넣어서 구분해줘야 한다. `\x, y, z => x + y + z` 뭐 이런 식. 왜 그렇게 했는지는 모르겠다. 이유가 있을까? 그냥 함수 정의할 때도 콤마를 쓰지 않으니 람다에서도 쓰지 않는게 더 직관적일 것 같은데... 약간 일관성 없는 것 같은 느낌. Haskell과 굳이 차이를 뒀으니 뭔가 이유가 있을 것도 같은데 잘 모르겠다.
+
+### Maybe
+
+Haskell이랑 다를 것 없음.
+
+### Tuple
+
+그냥 쓸 때는 Haskell이랑 별 다를 바가 없긴 한데.. (a,b,c) 이런 애들이 nested pair로 구성된다는 사실은 좀 특이한 듯. Haskell도 내부 구현이 저런가? 잘 모르겠다. `fst` / `snd` 동작이 Haskell이랑 다른 걸 봐서 아닌 것 같은데. Idris에서는 `fst` / `snd`를 모든 튜플에 대해 사용 가능하며, 3개 이상 짜리 튜플에 `snd`를 쓰면 마치 `tail` 함수처럼 첫번째 원소를 제외한 나머지로 구성된 튜플이 나온다(내부적으로 nested pair기 때문). 이건 좀 괜찮은 것 같기도 하다.
 
