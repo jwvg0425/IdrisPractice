@@ -646,3 +646,22 @@ testList = [3,4,1]
 
 ## Determining Parameters
 
+```Idris
+interface Monad m => MonadState s (m : Type -> Type) | m where
+  get : m s
+  put : s -> m ()
+```
+
+특정 인터페이스의 구현을 찾는데 사용되는 파라메터를 명시해 주는 것. 파이프(|)뒤에 쓴다. MonadState의 구현을 찾는데 필요한 파라메터는 `m`이고, `s`는 그 다음에 함수 적용 과정에서 결정되는 타입이기 때문에 해당 인터페이스의 구현체를 결정하는 인자가 무엇인가?를 결정하는 인자를 명시해주는 것이라고 한다. 잘 몰랐는데 Haskell에도 있는 문법인 듯? idris 보면서 haskell도 같이 공부되는 것 같은 기분..
+
+## Modules and namespaces
+
+이 부분은 다른 언어와 그렇게 큰 차이가 있는 부분도 아니고, 내가 Idris에서 배우고 싶은 내용이랑은 크게 관련 없는 부분이라 생략.
+
+## dependent pattern matching
+
+## Theorem Proving
+
+## Provisional Definitions
+
+## Syntax Extensions
