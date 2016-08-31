@@ -687,6 +687,30 @@ natToBin k with (parity k)
 
 ## Theorem Proving
 
+이쪽은 튜토리얼에 설명이 좀 부족하고(막상 제일 궁금했던 내용인데...), [이 문서](https://eb.host.cs.st-andrews.ac.uk/Idris/theorems.html)에 비교적 설명이 잘 되어 있다. 하지만 이 파트 내용 자체가 기본적으로 [Curry-Howard correspondence](https://en.wikipedia.org/wiki/Curry%E2%80%93Howard_correspondence)를 이해하고 있어야 해서 어려운 듯. 이 부분도 아직 기초 부분밖에 이해를 못 해서 좀 더 공부해봐야 겠다. 이 쪽은 Haskell wiki books의 [이 문서](https://en.wikibooks.org/wiki/Haskell/The_Curry%E2%80%93Howard_isomorphism)가 비교적 쉽게 설명이 되어 있는 듯. 요점은 프로그래밍에서의 타입 시스템이 Propositional Proof와 유사하다는 것. isomorphism이라는 표현을 쓰던데 이게 수학 용어라 정확하게 내가 생각하는 게 맞는지는 모르겠지만, 어쨌든 두 체계가 거의 같고, 그래서 프로그램의 타입 시스템을 이용해 증명을 할 수 있다는 것이 제일 중요한 포인트. Idris는 특유의 타입 시스템을 통해 이런 증명 시스템을 지원해준다.
+
+### Equality
+
+Idris에서는 Propositional Equality에 대한 정의를 할 수있다. 이 걸 이용해서 프로그램에 관한 theorem을 증명할 수 있다. 기본적으로 아래의 타입을 사용.
+
+```Idris
+data (=) : a -> b -> Type where
+  Refl : x = x
+```
+
+`Refl`이라는 이름은 Reflection에서 온 거라고. 근데 Reflection이 어떤 의미인지 정확하게 몰라서 잘 이해가 안 감. 이럴 때 기초 공부가 많이 부족한다는 걸 느낀다. 이 부분은 관련 기초 내용 좀 더 착실히 공부하고 다시 이해해봐야할 듯. 아무튼 위 타입을 쓰면 아래와 같은 정의가 가능.
+
+```Idris
+fiveIsFive : 5 = 5
+fiveIsFive = Refl
+
+twoPlusTwo : 2 + 2 = 4
+twoPlusTwo = Refl
+```
+
+### Simple theorems
+
+이제 간단한 
 
 
 ## Provisional Definitions
