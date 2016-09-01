@@ -741,7 +741,11 @@ plusReducesO (S k) = eq_resp_S (plusReducesO k)
 eq_resp_S : (m=n) -> ((S m) = (S n))
 ```
 
-타입 그대로인 것 같다. `m=n`일 때 `(S m) = (S n)`임을 보이는 거니까. 여기서 이 함수의 인자로 `plusReducesO k`를 넘겼으니까, 타입을 분석하면 `n = plus n 0 -> n + 1 = plus (n+1) 0`이 된다. 
+타입 그대로인 것 같다. `m=n`일 때 `(S m) = (S n)`임을 보이는 거니까. 여기서 이 함수의 인자로 `plusReducesO k`를 넘겼으니까, 타입을 분석하면 `n = plus n 0 -> (S n) = S (plus n 0)`이 된다.
+
+### Interactive theorem proving
+
+
 
 ## Provisional Definitions
 
