@@ -6,6 +6,8 @@ Idris Practice
 
 이 언어 자체가 실용적이냐? 라고 하면 그건 잘 모르겠는데.. 라는 느낌이지만, 이 언어에 있는 독특한 여러 가지 개념들은 꽤 재밌다.
 
+기반 개념은 [Intuitionistic type theory](https://en.wikipedia.org/wiki/Intuitionistic_type_theory)인 것 같다. 이 문서 *Further reading* 섹션에 있는 논문들을 참조하면 완전 기초부터 차근차근 공부할 수 있을 듯. 일단은 맛만 보는 셈이니 이 부분 내용은 나중에 자세히 공부하고 정리하자.
+
 ## Data Types
 
 기본적인 데이터 타입 선언 방식은 Haskell과 굉장히 유사하다.
@@ -698,50 +700,10 @@ data (=) : a -> b -> Type where
   Refl : x = x
 ```
 
-`Refl`이라는 이름은 Reflection에서 온 거라고. 근데 Reflection이 어떤 의미인지 정확하게 몰라서 잘 이해가 안 감. 이럴 때 기초 공부가 많이 부족한다는 걸 느낀다. 이 부분은 관련 기초 내용 좀 더 착실히 공부하고 다시 이해해봐야할 듯. 아무튼 위 타입을 쓰면 아래와 같은 정의가 가능.
+`Refl`이라는 이름은 Reflexivity에서 온 거라고 한다. 이게 수학에서 [Reflexive relation](https://en.wikipedia.org/wiki/Reflexive_relation) 을 가리키는 듯. `a binary relation R over a set X is reflexive if every element of X is related to itself` 으로 정의되는데, 의미는 비교적 간단하다. 대표적으로 실수 집합에서 `is equal to`가 있다고. 모든 숫자가 자기 자신과 대응되는 관계이기 때문.
 
-```Idris
-fiveIsFive : 5 = 5
-fiveIsFive = Refl
-
-twoPlusTwo : 2 + 2 = 4
-twoPlusTwo = Refl
-```
-
-### Simple theorems
-
-간단한 증명 예제. `0+n=n`을 증명.
-
-```Idris
-plusReduces : (n:Nat) -> (plus 0 n = n)
-```
-
-`n`이 자연수일 때 `0+n=n` 임을 보인다고 생각하면 될 듯. 논리 기호 그대로라는 느낌?
-
-```Idris
-plusReduces : n = refl n
-```
-
-이건 이렇게 하면 증명이 된다고. `plus 0 n`은 `plus`의 정의에 의해 `n`으로 정규화되기 때문. 하지만 이걸 약간 바꾸면 증명이 좀 어려워진다.
-
-```Idris
-plusReducesO : (n : Nat) -> (n = plus n 0)
-```
-
-이게 왜 더 어려워진거지? 라고 생각했는데, 이유가 `plus`함수가 함수의 첫 번째 인자에 대해 재귀적으로 정의되어 있기 때문이다. 위 예제에서는 재귀함수 정의에서 첫번째 인자가 `0`일 때 패턴매칭으로 그냥 `n`으로 정규화됨을 컴파일러가 쉽게 알 수 있는데, 그걸 거꾸로 하면 첫번째 인자가 `n`인 일반적인 케이스가 되니까 그걸 정규화 하지 못하는 듯(이라는 생각이 드는데, 맞는지 확실하지는 않음. 왜 이부분은 제대로 설명된 문서가 없을까? 내가 멍청해서 설명 안해도 명확한 부분을 잘 이해하지 못하는 건지...)
-
-```Idris
-plusReducesO 0 = refl _
-plusReducesO (S k) = eq_resp_S (plusReducesO k)
-```
-
-일단 인자가 `0`인 경우는 비교적 쉽다. 앞의 예제와 마찬가지로 `0 = plus 0 0`은 `0 = 0`으로 정규화되기 때문에 바로 증명이 된다. 그 다음 패턴은 귀납적 증명에서 `n`일 때 성립하면 `n+1`일 때도 성립한다 를 보이는 부분인 듯. `eq_resp_S` 함수는 라이브러리에 정의되어 있는 함수로 아래와 같다.
-
-```Idris
-eq_resp_S : (m=n) -> ((S m) = (S n))
-```
-
-타입 그대로인 것 같다. `m=n`일 때 `(S m) = (S n)`임을 보이는 거니까. 여기서 이 함수의 인자로 `plusReducesO k`를 넘겼으니까, 타입을 분석하면 `n = plus n 0 -> (S n) = S (plus n 0)`이 된다.
+ 어쨌든 Refl은 두 개의 서로 다른 타입 `a`, `b`의 값이 *동일하다*라고 주장하는 것으로 생각할 수 있다. 이 타입은 propositional
+이걸로 어떻게 propositional equality를 증명할 수 있느냐는 또 Curry-Howard correspondence에 대한 이해가 필요해서 쉽게 이해하고 넘어가기가 힘들다. 그래서 잘 이해를 못하겠다. 나중에 이 부분에 대한 내용은 따로 정리해보자. 아무튼 
 
 ### Interactive theorem proving
 
