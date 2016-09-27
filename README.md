@@ -702,11 +702,35 @@ data (=) : a -> b -> Type where
 
 `Refl`이라는 이름은 Reflexivity에서 온 거라고 한다. 이게 수학에서 [Reflexive relation](https://en.wikipedia.org/wiki/Reflexive_relation) 을 가리키는 듯. `a binary relation R over a set X is reflexive if every element of X is related to itself` 으로 정의되는데, 의미는 비교적 간단하다. 대표적으로 실수 집합에서 `is equal to`가 있다고. 모든 숫자가 자기 자신과 대응되는 관계이기 때문.
 
- 어쨌든 Refl은 두 개의 서로 다른 타입 `a`, `b`의 값이 *동일하다*라고 주장하는 것으로 생각할 수 있다. 이 타입은 propositional
-이걸로 어떻게 propositional equality를 증명할 수 있느냐는 또 Curry-Howard correspondence에 대한 이해가 필요해서 쉽게 이해하고 넘어가기가 힘들다. 그래서 잘 이해를 못하겠다. 나중에 이 부분에 대한 내용은 따로 정리해보자. 아무튼 
+ 어쨌든 Refl은 두 개의 서로 다른 타입 `a`, `b`의 값이 *동일하다*라고 주장하는 것으로 생각할 수 있다.
+이걸로 어떻게 propositional equality를 증명할 수 있느냐는 또 Curry-Howard correspondence에 대한 이해가 필요해서 쉽게 이해하고 넘어가기가 힘들다. 나중에 이 부분에 대한 내용은 따로 정리해보자. 아무튼 이걸 이용해서 아래와 같은 코드를 작성할 수 있다.
+
+```Idris
+fiveIsFive : 5 = 5
+fiveIsFive = Refl
+
+twoPlusTwo : 2 + 2 = 4
+twoPlusTwo = Refl
+```
+
+동등성 증명(Equality Prove)은 어떤 종류의 어떤 값이든 간에 상관없이 수행할 수 있으나, 실제로 그 두 값이 같을 때에만 성립한다. 위 예제에서 `2+2`같은 수식의 경우도 계산하면 결과적으로 `4`라는 값이 나오기 때문에 증명이 성립된다.
+
+### The Empty Type
+
+empty type(⊥)은 Haskell에서도 상당히 중요하게 다루는 개념인데, 간단하게 말하자면 '값이 없는' 타입이다. 즉 empty type의 값이라는 건 존재할 수가 없다. 이 특성을 이용해서 불가능성에 대한 증명을 할 수 있다.
+
+```Idris
+disjoint : (n : Nat) -> Z = S n -> Void
+disjoint n p = replace {P = disjoinTy} p () where
+  disjointTy : Nat -> Type
+  disjointTy Z = ()
+  disjointTy (S k) = Void
+```
+
+
+
 
 ### Interactive theorem proving
-
 
 
 ## Provisional Definitions
