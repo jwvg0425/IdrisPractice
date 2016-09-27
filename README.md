@@ -727,8 +727,15 @@ disjoint n p = replace {P = disjoinTy} p () where
   disjointTy (S k) = Void
 ```
 
+### Simple Theorems
 
+### Totality Checking
 
+### Equality Proofs Example
+
+### Heterogeneous Equality
+
+### Properties of plus
 
 ### Interactive theorem proving
 
